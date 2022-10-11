@@ -5,6 +5,7 @@ from Crypto.Random import get_random_bytes
 from Crypto.Util.Padding import pad, unpad
 
 BLOCK_SIZE = 16
+KEY_SIZE = 256
 BYTE_FORMAT = 'ASCII'
 
 def get_a_b(p: int) -> int:
@@ -16,7 +17,7 @@ def get_A_B(p: int, g: int, a_b:int) -> int:
 def encrypt(msg: str, A_B: int, a_b: int, p: int, IV: bytes) -> bytes:
   s = pow(A_B, a_b, p)
   hasher = SHA256.new()
-  byte_s = s.to_bytes(256, 'big')
+  byte_s = s.to_bytes(KEY_SIZE, 'big')
   hasher.update(byte_s)
   key = hasher.digest()
   cipherer = AES.new(key, AES.MODE_CBC, IV)
@@ -25,7 +26,7 @@ def encrypt(msg: str, A_B: int, a_b: int, p: int, IV: bytes) -> bytes:
 def decrypt(cipher: bytes, A_B: int, a_b: int, p:int, IV: bytes) -> str:
   s = pow(A_B, a_b, p)
   hasher = SHA256.new()
-  byte_s = s.to_bytes(256, 'big')
+  byte_s = s.to_bytes(KEY_SIZE, 'big')
   hasher.update(byte_s)
   key = hasher.digest()
   cipherer = AES.new(key, AES.MODE_CBC, IV)
@@ -86,7 +87,6 @@ def main():
   print(m_from_alice, m_from_bob)
 
   # task2 part B attack case g = 1
-  p = 0xB10B8F96A080E01DDE92DE5EAE5D54EC52C99FBCFB06A3C69A6A9DCA52D23B616073E28675A23D189838EF1E2EE652C013ECB4AEA906112324975C3CD49B83BFACCBDD7D90C4BD7098488E9C219A73724EFFD6FAE5644738FAA31A4FF55BCCC0A151AF5F0DC8B4BD45BF37DF365C1A65E68CFDA76D4DA708DF1FB2BC2E4A4371
   g = 1
   a = get_a_b(p)
   b = get_a_b(p)
@@ -99,7 +99,6 @@ def main():
   print(m_from_alice, m_from_bob)
 
   # task2 B attack case g = p
-  p = 0xB10B8F96A080E01DDE92DE5EAE5D54EC52C99FBCFB06A3C69A6A9DCA52D23B616073E28675A23D189838EF1E2EE652C013ECB4AEA906112324975C3CD49B83BFACCBDD7D90C4BD7098488E9C219A73724EFFD6FAE5644738FAA31A4FF55BCCC0A151AF5F0DC8B4BD45BF37DF365C1A65E68CFDA76D4DA708DF1FB2BC2E4A4371
   g = p
   a = get_a_b(p)
   b = get_a_b(p)
@@ -112,7 +111,6 @@ def main():
   print(m_from_alice, m_from_bob)
 
   # task2 B attack case g = p - 1
-  p = 0xB10B8F96A080E01DDE92DE5EAE5D54EC52C99FBCFB06A3C69A6A9DCA52D23B616073E28675A23D189838EF1E2EE652C013ECB4AEA906112324975C3CD49B83BFACCBDD7D90C4BD7098488E9C219A73724EFFD6FAE5644738FAA31A4FF55BCCC0A151AF5F0DC8B4BD45BF37DF365C1A65E68CFDA76D4DA708DF1FB2BC2E4A4371
   g = p - 1
   a = get_a_b(p)
   b = get_a_b(p)
@@ -120,8 +118,18 @@ def main():
   B = get_A_B(p, g, b)
   c0 = encrypt('Hi Bob!', B, a, p, alice_IV)
   c1 = encrypt('Hi Alice!', A, b, p, bob_IV)
-  m_from_bob = hack_decrypt(c0, 1, alice_IV)
-  m_from_alice = hack_decrypt(c1, 1, bob_IV)
+
+  # s is either 1 or p-1, when both a and b are odd, s is p-1, otherwise 1
+
+  try: 
+    m_from_bob = hack_decrypt(c0, 1, alice_IV)
+  except ValueError:
+    m_from_bob = hack_decrypt(c0, p-1, alice_IV)
+  try:
+    m_from_alice = hack_decrypt(c1, 1, bob_IV)
+  except ValueError:
+    m_from_alice = hack_decrypt(c1, p-1, bob_IV)
+
   print(m_from_alice, m_from_bob)
 
 if __name__ == '__main__':

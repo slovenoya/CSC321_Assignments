@@ -6,6 +6,7 @@ from Crypto.Util.Padding import pad, unpad
 from Crypto.Util.number import getPrime
 
 LENGTH = 37
+IV_LENGTH = 16
 BYTE_ORDER = 'big'
 
 def get_prime(length: int) -> int:
@@ -42,6 +43,14 @@ def RSA_decrypt(cipher: bytes, private_key: int, public_key: 'tuple[int, int]') 
     message += M.to_bytes(1, BYTE_ORDER)
   return message
 
+def RSA_CBC_encrypt(public_key: 'tuple[int, int]', private_key: int, message:bytes, CBC_key_RSA:bytes, IV: bytes) -> bytes:
+  hasher = SHA256.new()
+  CBC_key = RSA_decrypt(CBC_key_RSA, private_key, public_key)
+  hasher.update(CBC_key)
+  CBC_key = hasher.digest()
+  cipherer = AES.new(CBC_key, AES.MODE_CBC, IV)
+  return cipherer.encrypt(pad(message, IV_LENGTH))
+
 def main():
   # part A
   e = 65537
@@ -49,15 +58,22 @@ def main():
   private_key, n = generate_keys(e, LENGTH)
   public_key = (e, n)
   #get a cipher
-  cipher = RSA_encrypt(public_key, 'hello'.encode('ASCII'))
+  cipher = RSA_encrypt(public_key, 'hello, alice'.encode('ASCII'))
   #decrypt the cipher
   print('decrypted message: ', RSA_decrypt(cipher, private_key, public_key))
 
   #try another message
-  cipher = RSA_encrypt(public_key, 'some important message'.encode('ASCII'))
+  cipher = RSA_encrypt(public_key, 'some important message from bob'.encode('ASCII'))
   print('decrypted message: ', RSA_decrypt(cipher, private_key, public_key))
 
-  #part B
+  #part B combine RSA and CBC, then hack
+  bob_IV = random.get_random_bytes(IV_LENGTH)
+  alice_IV = random.get_random_bytes(IV_LENGTH)
+  bob_CBC_key = random.get_random_bytes(LENGTH)
+  bob_CBC_key_RSA = RSA_encrypt(public_key, bob_CBC_key)
+  c0 = RSA_CBC_encrypt(public_key, private_key, 'hi, bob!'.encode('ASCII'), bob_CBC_key_RSA, alice_IV)
+
+
   
 
 if __name__ == '__main__':
