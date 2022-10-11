@@ -121,6 +121,7 @@ def main():
 
   # s is either 1 or p-1, when both a and b are odd, s is p-1, otherwise 1
 
+  # use try except since a, b are already forgotten at this point
   try: 
     m_from_bob = hack_decrypt(c0, 1, alice_IV)
   except ValueError:
