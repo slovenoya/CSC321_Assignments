@@ -6,6 +6,7 @@ from Crypto.Util.Padding import pad, unpad
 from Crypto.Util.number import getPrime
 
 LENGTH = 37
+BYTE_ORDER = 'big'
 
 def get_prime(length: int) -> int:
   return getPrime(length)
@@ -29,24 +30,35 @@ def RSA_encrypt(public_key: 'tuple[int, int]', message: bytes) -> bytes:
   e, n = public_key
   for byte in message: 
     C = pow(byte, e, n)
-    cipher += C.to_bytes(LENGTH, 'big')
+    cipher += C.to_bytes(LENGTH, BYTE_ORDER)
   return bytearray(cipher)
 
 def RSA_decrypt(cipher: bytes, private_key: int, public_key: 'tuple[int, int]') -> bytes:
   message = bytes()
   e, n = public_key
   for i in range(len(cipher) // LENGTH):
-    C = int.from_bytes(cipher[i*LENGTH : i*LENGTH + LENGTH], 'big')
+    C = int.from_bytes(cipher[i*LENGTH : i*LENGTH + LENGTH], BYTE_ORDER)
     M = pow(C, private_key, n)
-    message += M.to_bytes(1, 'big')
+    message += M.to_bytes(1, BYTE_ORDER)
   return message
 
 def main():
+  # part A
   e = 65537
+  # get private key (d) and the other part of public key 
   private_key, n = generate_keys(e, LENGTH)
   public_key = (e, n)
+  #get a cipher
   cipher = RSA_encrypt(public_key, 'hello'.encode('ASCII'))
-  print(RSA_decrypt(cipher, private_key, public_key))
+  #decrypt the cipher
+  print('decrypted message: ', RSA_decrypt(cipher, private_key, public_key))
+
+  #try another message
+  cipher = RSA_encrypt(public_key, 'some important message'.encode('ASCII'))
+  print('decrypted message: ', RSA_decrypt(cipher, private_key, public_key))
+
+  #part B
+  
 
 if __name__ == '__main__':
   main()
