@@ -13,7 +13,6 @@ class User:
   def __repr__(self):
     return self.name
 
-
 def crack(users:'list[User]'):
   user_dict = dict()
   for user in users:
@@ -22,6 +21,7 @@ def crack(users:'list[User]'):
     else:
       user_dict[user.salt] = [user]
   for salt in user_dict.keys():
+    # crack_by_salt(user_dict[salt])
     p = Process(target=crack_by_salt, args=(user_dict[salt], ))
     p.start()
     p.join()
@@ -34,6 +34,7 @@ def crack_by_salt(user_list: 'list[User]'):
     for user in user_list:
       if hash_pass == user.hash:
         print(f'{user.name} password: {word}')
+        return
 
 def read_users():
   users = []
@@ -44,7 +45,7 @@ def read_users():
       hash_split = line.split('$')
       name = name_split[0]
       salt = name_split[1][:29].encode(ENCODING)
-      hash_val = hash_split[3][22:].encode(ENCODING)
+      hash_val = name_split[1].strip().encode(ENCODING)
       users.append(User(name, salt, hash_val))
   return users
 
