@@ -34,7 +34,7 @@ def crack_by_salt(user_list: 'list[User]'):
     for user in user_list:
       if hash_pass == user.hash:
         print(f'{user.name} password: {word}')
-        return
+        # user_list.remove(user)
 
 def read_users():
   users = []
